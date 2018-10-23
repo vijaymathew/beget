@@ -22,9 +22,10 @@ import (
 )
 
 type RequestContext struct {
+	proxyURL string
 	MaxRedirects int // defaults to 10
 	Jar http.CookieJar
-	Timeout time.Duration
+	Timeout time.Duration // defaults to 5secs
 	CustomHeader http.Header
 }
 
@@ -34,6 +35,12 @@ type HTTPResponse struct {
 	Header http.Header `json:"headers"`
 	Jar http.CookieJar `json:"-"`
 	Body string `json:"body"`
+}
+
+func NewRequestContext() (ctx RequestContext) {
+	ctx.MaxRedirects = 10
+	ctx.Timeout = time.Duration(5 * time.Second)
+	return
 }
 
 // Get fetches a document via an HTTP GET request.
@@ -73,6 +80,6 @@ func simpleGet(url string) (response HTTPResponse, err error) {
 }
 
 func customGet(url string, ctx *RequestContext) (response HTTPResponse, err error) {
-	// TODO: GET via a new Client.
+	// TODO: GET via a new Client + Transport.
 	return
 }
