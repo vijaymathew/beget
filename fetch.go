@@ -16,21 +16,38 @@ package beget
 
 import (
 	"fmt"
+	"time"
 	"io/ioutil"
 	"net/http"
 )
 
+type RequestContext struct {
+	MaxRedirects int // defaults to 10
+	Jar http.CookieJar
+	Timeout time.Duration
+	CustomHeader http.Header
+}
+
 type HTTPResponse struct {
-	StatusCode int // e.g -1, 200
-	Status string // e.g. 200 OK
-	Header map[string][]string
-	Body string
+	StatusCode int `json:"statusCode"` // e.g -1, 200
+	Status string `json:"status"` // e.g. 200 OK
+	Header http.Header `json:"headers"`
+	Jar http.CookieJar `json:"-"`
+	Body string `json:"body"`
 }
 
 // Get fetches a document via an HTTP GET request.
 // The status, header and body information of the HTTP response
 // will be returned in an HTTPResponse object.
-func Get(url string) (response HTTPResponse, err error) {
+func Get(url string, ctx *RequestContext) (response HTTPResponse, err error) {
+	if ctx == nil {
+		return simpleGet(url)
+	} else {
+		return customGet(url, ctx)
+	}
+}
+
+func simpleGet(url string) (response HTTPResponse, err error) {
 	res, err := http.Get(url)
 	if err != nil {
 		return
@@ -52,5 +69,10 @@ func Get(url string) (response HTTPResponse, err error) {
 		}
 		response.Header[key] = newValues
 	}
+	return
+}
+
+func customGet(url string, ctx *RequestContext) (response HTTPResponse, err error) {
+	// TODO: GET via a new Client.
 	return
 }

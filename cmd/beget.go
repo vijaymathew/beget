@@ -21,7 +21,7 @@ import (
 )
 
 func main() {
-	resp, err := beget.Get(os.Args[1])
+	resp, err := beget.Get(os.Args[1], nil)
 	if err != nil {
 		fmt.Printf("ERROR: %v\n", err)
 	} else {
