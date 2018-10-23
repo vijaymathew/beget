@@ -19,14 +19,17 @@ import (
 	"time"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
+const defaultRedirects = 10
+
 type RequestContext struct {
-	proxyURL string
+	ProxyURL string
 	MaxRedirects int // defaults to 10
 	Jar http.CookieJar
-	Timeout time.Duration // defaults to 5secs
-	CustomHeader http.Header
+	TimeoutSecs time.Duration // defaults to 5secs
+	Header map[string]string
 }
 
 type HTTPResponse struct {
@@ -39,7 +42,7 @@ type HTTPResponse struct {
 
 func NewRequestContext() (ctx RequestContext) {
 	ctx.MaxRedirects = 10
-	ctx.Timeout = time.Duration(5 * time.Second)
+	ctx.TimeoutSecs = time.Duration(5 * time.Second)
 	return
 }
 
@@ -59,6 +62,10 @@ func simpleGet(url string) (response HTTPResponse, err error) {
 	if err != nil {
 		return
 	}
+	return parseResponse(res)
+}
+
+func parseResponse(res *http.Response) (response HTTPResponse, err error) {
 	defer res.Body.Close()
 	bytes, err := ioutil.ReadAll(res.Body)
 	response.Body = string(bytes)
@@ -79,7 +86,51 @@ func simpleGet(url string) (response HTTPResponse, err error) {
 	return
 }
 
-func customGet(url string, ctx *RequestContext) (response HTTPResponse, err error) {
-	// TODO: GET via a new Client + Transport.
-	return
+func makeRedirectCounter(maxRedirects int) (func(req *http.Request, via []*http.Request) error) {
+	counter := func(_ *http.Request, via []*http.Request) error {
+		if len(via) >= maxRedirects {
+			return fmt.Errorf("stopped after %d redirects", maxRedirects)
+		}
+		return nil
+	}
+	return counter
+}
+
+func noRedirect(_ *http.Request, _ []*http.Request) error {
+	return http.ErrUseLastResponse
+}
+
+func customGet(urlStr string, ctx *RequestContext) (response HTTPResponse, err error) {
+	client := &http.Client{}
+	if ctx.MaxRedirects != defaultRedirects {
+		client.CheckRedirect = makeRedirectCounter(ctx.MaxRedirects)
+	} else if ctx.MaxRedirects <= 0 { // No redirects
+		client.CheckRedirect = noRedirect
+	}
+	if ctx.TimeoutSecs >= 0 {
+		client.Timeout = time.Duration(ctx.TimeoutSecs * time.Second)
+	}
+	if ctx.ProxyURL != "" {
+		proxyURL, e := url.Parse(ctx.ProxyURL)
+		if e != nil {
+			err = e
+			return
+		}
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		}
+		client.Transport = transport
+	}
+	request, err := http.NewRequest("GET", urlStr, nil)
+	if err != nil {
+		return
+	}
+	for key, value := range ctx.Header {
+		request.Header.Add(key, value)
+	}
+	res, err := client.Do(request)
+	if err != nil {
+		return
+	}
+	return parseResponse(res)
 }
