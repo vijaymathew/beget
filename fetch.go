@@ -24,7 +24,7 @@ import (
 
 const defaultRedirects = 10
 
-type RequestContext struct {
+type HTTPRequestContext struct {
 	ProxyURL string
 	MaxRedirects int // defaults to 10
 	Jar http.CookieJar
@@ -40,7 +40,7 @@ type HTTPResponse struct {
 	Body string `json:"body"`
 }
 
-func NewRequestContext() (ctx RequestContext) {
+func NewHTTPRequestContext() (ctx HTTPRequestContext) {
 	ctx.MaxRedirects = 10
 	ctx.TimeoutSecs = time.Duration(5 * time.Second)
 	return
@@ -49,7 +49,7 @@ func NewRequestContext() (ctx RequestContext) {
 // Get fetches a document via an HTTP GET request.
 // The status, header and body information of the HTTP response
 // will be returned in an HTTPResponse object.
-func Get(url string, ctx *RequestContext) (response HTTPResponse, err error) {
+func Get(url string, ctx *HTTPRequestContext) (response HTTPResponse, err error) {
 	if ctx == nil {
 		return simpleGet(url)
 	} else {
@@ -100,7 +100,7 @@ func noRedirect(_ *http.Request, _ []*http.Request) error {
 	return http.ErrUseLastResponse
 }
 
-func customGet(urlStr string, ctx *RequestContext) (response HTTPResponse, err error) {
+func customGet(urlStr string, ctx *HTTPRequestContext) (response HTTPResponse, err error) {
 	client := &http.Client{}
 	if ctx.MaxRedirects != defaultRedirects {
 		client.CheckRedirect = makeRedirectCounter(ctx.MaxRedirects)

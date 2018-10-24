@@ -32,7 +32,7 @@ type Repository interface {
 	// the key already exists or the write failed.
 	// If the write failed, err will contain details of the
 	// failure condition.
-	Put(key string, data string) (status bool, err error)
+	Put(key string, data []byte) (status bool, err error)
 }
 
 // A basic Repository that writes data to the local file system.
@@ -49,12 +49,12 @@ func FileRepository (targetDir string) (repository fileRepository) {
 	return
 }
 
-func (repository fileRepository) Put(key string, data string) (bool, error) {
+func (repository fileRepository) Put(key string, data []byte) (bool, error) {
 	path := filepath.Join(repository.targetDir, key)
 	if _, err := os.Stat(path); os.IsExist(err) {
 		return false, nil
 	}
-	err := ioutil.WriteFile(path, []byte(data), 0644)
+	err := ioutil.WriteFile(path, data, 0644)
 	if err != nil {
 		return false, fmt.Errorf("fileRepository.Put failed: %v", err)
 	}
