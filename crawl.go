@@ -25,7 +25,7 @@ type CrawlContext struct {
 }
 
 type CrawlRequestContext struct {
-	Store Repository
+	Repo Repository
 	Context *HTTPRequestContext
 }
 
@@ -57,7 +57,7 @@ func getResource(resourceKey string, resource string, ctx *CrawlRequestContext, 
 		crawlCtx.Logger.Printf("getResource: %v", err)
 		return
 	}
-	saveToRepository(resourceKey, &response, ctx.Store, crawlCtx)
+	saveToRepository(resourceKey, &response, ctx.Repo, crawlCtx)
 }
 
 func saveToRepository(resourceKey string, response *HTTPResponse, store Repository, crawlCtx *CrawlContext) {

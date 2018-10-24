@@ -35,6 +35,8 @@ type Repository interface {
 	Put(key string, data []byte) (status bool, err error)
 }
 
+type NewRepo func (string) (Repository)
+
 // A basic Repository that writes data to the local file system.
 type fileRepository struct {
 	targetDir string
@@ -44,9 +46,9 @@ type fileRepository struct {
 // Returns the fileRepository.
 // Note that the existence of targetDir is checked lazily, when the
 // write happens.
-func FileRepository (targetDir string) (repository fileRepository) {
-	repository.targetDir = targetDir
-	return
+func NewFileRepository (targetDir string) (Repository) {
+	repository := fileRepository{targetDir: targetDir}
+	return &repository
 }
 
 func (repository fileRepository) Put(key string, data []byte) (bool, error) {
