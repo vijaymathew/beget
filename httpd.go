@@ -57,7 +57,7 @@ func startJobPopper(jobs chan CrawlRequest, abort chan struct{}, crawlCtx *Crawl
 	}
 }
 
-func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) {
+func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) (err error) {
 	var srv http.Server	
 	jobs := make(chan CrawlRequest)
 	abort := make(chan struct{})
@@ -67,7 +67,7 @@ func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) {
 
 	crawlRequestHandler := func (w http.ResponseWriter, r *http.Request) {
 		var req CrawlRequest
-		err := json.NewDecoder(r.Body).Decode(&req)
+		err = json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			w.WriteHeader(400)
 			fmt.Fprintf(w, "%v", err)
@@ -91,8 +91,8 @@ func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) {
 		signal.Notify(sigint, os.Interrupt)
 		<-sigint
 		
-		// We received an interrupt signal, shut down.
-		if err := srv.Shutdown(context.Background()); err != nil {
+		// Received an interrupt signal, shut down.
+		if err = srv.Shutdown(context.Background()); err != nil {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
@@ -102,7 +102,6 @@ func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) {
 
 	addr := fmt.Sprintf("%s:%d", config.Interface, config.Port)
 	certf, keyf := config.TLSCertFile, config.TLSKeyFile
-	var err error
 	if certf != "" && keyf != "" {
 		err = http.ListenAndServeTLS(addr, certf, keyf, mux)
 	} else {
@@ -115,4 +114,5 @@ func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) {
 	}
 
 	<-idleConnsClosed
+	return
 }
