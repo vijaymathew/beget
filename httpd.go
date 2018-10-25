@@ -60,7 +60,7 @@ func startJobPopper(jobs chan CrawlRequest, abort chan struct{}, crawlCtx *Crawl
 func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) (err error) {
 	var srv http.Server	
 	jobs := make(chan CrawlRequest)
-	abort := make(chan struct{})
+	abort := make(chan struct{}, 1)
 	go startJobPopper(jobs, abort, crawlCtx)
 	
 	mux := http.NewServeMux()
@@ -90,22 +90,23 @@ func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) (err error
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt)
 		<-sigint
-		
+
 		// Received an interrupt signal, shut down.
 		if err = srv.Shutdown(context.Background()); err != nil {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
 		close(idleConnsClosed)
-		<-abort
+		abort <- struct{}{}
 	}()
 
-	addr := fmt.Sprintf("%s:%d", config.Interface, config.Port)
+	srv.Addr = fmt.Sprintf("%s:%d", config.Interface, config.Port)
+	srv.Handler = mux
 	certf, keyf := config.TLSCertFile, config.TLSKeyFile
 	if certf != "" && keyf != "" {
-		err = http.ListenAndServeTLS(addr, certf, keyf, mux)
+		err = srv.ListenAndServeTLS(certf, keyf)
 	} else {
-		err = http.ListenAndServe(addr, mux)
+		err = srv.ListenAndServe()
 	}
 	
 	if err != http.ErrServerClosed {

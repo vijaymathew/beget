@@ -17,14 +17,17 @@ package main
 import (
 	"os"
 	"fmt"
+	"log"
 	"github.com/vijaymathew/beget"
 )
 
 func main() {
-	resp, err := beget.Get(os.Args[1], nil)
+	logger := log.New(os.Stdout, "beget: ", log.Lshortfile)
+	cfg := beget.HTTPServerConfig{Port: 8080}
+	ctx := beget.NewCrawlContext(10, logger)
+	err := beget.StartHTTPServer(cfg, ctx)
 	if err != nil {
 		fmt.Printf("ERROR: %v\n", err)
-	} else {
-		fmt.Printf("%v\n", resp)
+		return
 	}
 }

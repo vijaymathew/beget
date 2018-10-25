@@ -29,10 +29,9 @@ type CrawlRequestContext struct {
 	Context *HTTPRequestContext
 }
 
-func NewCrawlContext(maxTokens int, logger *log.Logger) (crawlCtx CrawlContext) {
-	crawlCtx.tokens = make(chan struct{}, maxTokens)
-	crawlCtx.Logger = logger
-	return
+func NewCrawlContext(maxTokens int, logger *log.Logger) (*CrawlContext) {
+	crawlCtx := CrawlContext{tokens: make(chan struct{}, maxTokens), Logger: logger}
+	return &crawlCtx
 }
 
 func (crawlCtx *CrawlContext) AcquireToken() {
