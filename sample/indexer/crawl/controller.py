@@ -2,6 +2,8 @@ import http.client
 import json
 import sys
 import getopt
+import queue
+import threading
 
 def print_usage():
     print('conroller.py <options>\n')
@@ -44,11 +46,16 @@ def getconnection():
         return http.client.HTTPConnection(crawler_host)
 
 headers = {'Content-type': 'application/json'}
+urls_q = queue.Queue()
+docs_q = queue.Queue()
 
 def crawl(urls):
     resources = {}
     for url in urls:
-        resources[urlfile(url)] = url
+        k = urlfile(url)
+        resources[k] = url
+        docs_q.put([k, url])
+
     request = {"repository": "file",
                "repositoryConfig": crawl_repository,
                "resources": {},
@@ -65,3 +72,14 @@ def crawl(urls):
     finally:
         if connection:
             connection.close()
+
+def crawl_job():
+    while True:
+        try:
+            urls = urls_q.get(False)
+        except queue.Error:
+            continue
+
+t = threading.Thread(target=get_url, args = (q,u))
+t.daemon = True
+t.start()
