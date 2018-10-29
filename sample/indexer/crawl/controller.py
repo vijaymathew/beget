@@ -9,15 +9,17 @@ def print_usage():
     print('options: \n')
     print('-h                    print this help and quit\n')
     print('-c --crawlerhost=URL  url to reach the crawler service\n')
-    print('-f --urls=filename    name of file with URLs to crawl, one on each line\n')
+    print('-u --urls=FILENAME    name of file with URLs to crawl, one on each line\n')
     print('-r --repodir=PATH     full path to the directory where crawled documents are stored\n')
 
 crawler_url = ''
 crawl_seed_file = ''
 crawl_repository = '.'
+opts = []
+args = []
 
 try:
-    opts, args = getopt.getopt(argv,"hc:f:r",["crawlerhost=","urls=", "repodir="])
+    opts, args = getopt.getopt(sys.argv[1:], "hc:u:r:",["crawlerhost=","urls=", "repodir="])
 except getopt.GetoptError:
     print_usage()
     sys.exit(2)
@@ -28,7 +30,7 @@ for opt, arg in opts:
         sys.exit()
     elif opt in ("-c", "--crawlerhost"):
         crawler_url = arg
-    elif opt in ("-f", "--urls"):
+    elif opt in ("-u", "--urls"):
         crawl_seed_file = arg
     elif opt in ("-r", "--repodir"):
         crawl_repository = arg
@@ -51,7 +53,6 @@ def crawl(urls):
     for url in urls:
         k = urlfile(url)
         resources[k] = url
-        docs_q.put({'filename': k, 'retries': 0, 'url': url})
 
     request = {"repository": "file",
                "repositoryConfig": crawl_repository,
@@ -71,8 +72,8 @@ def crawl(urls):
         if connection:
             connection.close()
 
-url = []
-for line in fileinput.input():
-    urls.append(line)
+urls = []
+for line in fileinput.input(crawl_seed_file):
+    urls.append(line.strip())
 
 crawl(urls)
