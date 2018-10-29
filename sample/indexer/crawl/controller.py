@@ -2,23 +2,22 @@ import http.client
 import json
 import sys
 import getopt
-import queue
-import threading
+import fileinput
 
 def print_usage():
     print('conroller.py <options>\n')
     print('options: \n')
     print('-h                    print this help and quit\n')
     print('-c --crawlerhost=URL  url to reach the crawler service\n')
-    print('-s --seedurl=URL      root url to start the crawling\n')
+    print('-f --urls=filename    name of file with URLs to crawl, one on each line\n')
     print('-r --repodir=PATH     full path to the directory where crawled documents are stored\n')
 
 crawler_url = ''
-crawl_seed_url = ''
+crawl_seed_file = ''
 crawl_repository = '.'
 
 try:
-    opts, args = getopt.getopt(argv,"hc:s:r",["crawlerhost=","seedurl=", "repodir="])
+    opts, args = getopt.getopt(argv,"hc:f:r",["crawlerhost=","urls=", "repodir="])
 except getopt.GetoptError:
     print_usage()
     sys.exit(2)
@@ -29,8 +28,8 @@ for opt, arg in opts:
         sys.exit()
     elif opt in ("-c", "--crawlerhost"):
         crawler_url = arg
-    elif opt in ("-s", "--seedurl"):
-        crawl_seed_url = arg
+    elif opt in ("-f", "--urls"):
+        crawl_seed_file = arg
     elif opt in ("-r", "--repodir"):
         crawl_repository = arg
 
@@ -46,15 +45,13 @@ def getconnection():
         return http.client.HTTPConnection(crawler_host)
 
 headers = {'Content-type': 'application/json'}
-urls_q = queue.Queue()
-docs_q = queue.Queue()
 
 def crawl(urls):
     resources = {}
     for url in urls:
         k = urlfile(url)
         resources[k] = url
-        docs_q.put([k, url])
+        docs_q.put({'filename': k, 'retries': 0, 'url': url})
 
     request = {"repository": "file",
                "repositoryConfig": crawl_repository,
@@ -62,6 +59,7 @@ def crawl(urls):
                "context": {}}
     request["resources"] = resources
     json_req = json.dumps(request)
+    print("Crawl request: " + json_req)
     connection = None
     try:
         connection = getconnection()
@@ -73,13 +71,8 @@ def crawl(urls):
         if connection:
             connection.close()
 
-def crawl_job():
-    while True:
-        try:
-            urls = urls_q.get(False)
-        except queue.Error:
-            continue
+url = []
+for line in fileinput.input():
+    urls.append(line)
 
-t = threading.Thread(target=get_url, args = (q,u))
-t.daemon = True
-t.start()
+crawl(urls)
