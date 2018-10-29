@@ -17,8 +17,10 @@ package beget
 import (
 	"os"
 	"fmt"
+	"bytes"
 	"io/ioutil"
 	"path/filepath"
+	"net/http"
 )
 
 // The Repository interface represents a key-value document store.
@@ -46,7 +48,7 @@ type fileRepository struct {
 // Returns the fileRepository.
 // Note that the existence of targetDir is checked lazily, when the
 // write happens.
-func NewFileRepository (targetDir string) (Repository) {
+func NewFileRepository(targetDir string) (Repository) {
 	repository := fileRepository{targetDir: targetDir}
 	return &repository
 }
@@ -61,4 +63,31 @@ func (repository fileRepository) Put(key string, data []byte) (bool, error) {
 		return false, fmt.Errorf("fileRepository.Put failed: %v", err)
 	}
 	return true, nil
+}
+
+// A HTTP repository - POST the fetched document to a generic endpoint that accepts JSON data.
+type simpleHTTPRepository struct {
+	url string
+}
+
+func NewSimpleHTTPRepository(url string) (Repository) {
+	repository := simpleHTTPRepository{url: url}
+	return &repository
+}
+
+func (repository simpleHTTPRepository) Put(key string, data []byte) (bool, error) {
+	req, err := http.NewRequest("POST", repository.url, bytes.NewBuffer(data))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 200 && resp.StatusCode <= 204 {
+		return true, nil
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	return false, fmt.Errorf("simpleHTTPRepository.Put failed: HTTPStatus: %v, HTTPResponse: %v",
+		resp.Status, body)
 }
