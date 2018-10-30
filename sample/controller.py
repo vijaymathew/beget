@@ -7,19 +7,21 @@ import fileinput
 def print_usage():
     print('conroller.py <options>\n')
     print('options: \n')
-    print('-h                    print this help and quit\n')
-    print('-c --crawlerhost=URL  url to reach the crawler service\n')
-    print('-u --urls=FILENAME    name of file with URLs to crawl, one on each line\n')
-    print('-r --repodir=PATH     full path to the directory where crawled documents are stored\n')
+    print('-h                      print this help and quit\n')
+    print('-c --crawlerhost=URL    url to reach the crawler service\n')
+    print('-u --urls=FILENAME      name of file with URLs to crawl, one on each line\n')
+    print('-t --repotype=TYPE      the type of repository (file, simpleHTTP etc)\n')
+    print('-r --repoconfig=CONFIG  configuration for the repository\n')
 
 crawler_url = ''
 crawl_seed_file = ''
-crawl_repository = '.'
+crawl_repo_type = 'file'
+crawl_repo_config = '.'
 opts = []
 args = []
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hc:u:r:",["crawlerhost=","urls=", "repodir="])
+    opts, args = getopt.getopt(sys.argv[1:], "hc:u:r:t:",["crawlerhost=","urls=", "repoconfig=", "repotype="])
 except getopt.GetoptError:
     print_usage()
     sys.exit(2)
@@ -32,8 +34,10 @@ for opt, arg in opts:
         crawler_url = arg
     elif opt in ("-u", "--urls"):
         crawl_seed_file = arg
-    elif opt in ("-r", "--repodir"):
-        crawl_repository = arg
+    elif opt in ("-t", "--repotype"):
+        crawl_repo_type = arg
+    elif opt in ("-r", "--repoconfig"):
+        crawl_repo_config = arg
 
 crawler_host = crawler_url[crawler_url.find('://')+3:]
 
@@ -54,8 +58,8 @@ def crawl(urls):
         k = urlfile(url)
         resources[k] = url
 
-    request = {"repository": "file",
-               "repositoryConfig": crawl_repository,
+    request = {"repository": crawl_repo_type,
+               "repositoryConfig": crawl_repo_config,
                "resources": {},
                "context": {}}
     request["resources"] = resources
