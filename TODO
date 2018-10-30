@@ -1,1 +1,4 @@
- * support non-network clients and repositories over stdout/in.
+ * implement digital-signatures for client requests
+ * test beget httpd for TLS
+ * test beget crawler for proxy support
+ * support non-network clients and repositories over stdout/in
