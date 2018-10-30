@@ -1,0 +1,3 @@
+http://schemer.in
+https://golang.org
+https://en.wikipedia.org/wiki/Communicating_sequential_processes
