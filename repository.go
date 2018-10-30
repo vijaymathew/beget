@@ -89,5 +89,5 @@ func (repository simpleHTTPRepository) Put(key string, data []byte) (bool, error
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
 	return false, fmt.Errorf("simpleHTTPRepository.Put failed: HTTPStatus: %v, HTTPResponse: %v",
-		resp.Status, body)
+		resp.Status, string(body))
 }
