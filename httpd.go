@@ -38,7 +38,8 @@ type HTTPServerConfig struct {
 	TLSKeyFile string
 }
 
-var repoRegistry = map[string]NewRepo{"file": NewFileRepository}
+var repoRegistry = map[string]NewRepo{"file": NewFileRepository,
+	"simpleHTTP": NewSimpleHTTPRepository}
 
 func toCrawlRequestContext(req *CrawlRequest) (*CrawlRequestContext) {
 	repo := repoRegistry[req.RepoType](req.RepoConfig)
