@@ -54,15 +54,20 @@ func NewFileRepository(targetDir string) (Repository) {
 }
 
 func (repository fileRepository) Put(key string, data []byte) (bool, error) {
-	path := filepath.Join(repository.targetDir, key)
-	if _, err := os.Stat(path); os.IsExist(err) {
-		return false, nil
+	if repository.targetDir == "" || repository.targetDir == "stdout" {
+		fmt.Printf("%s,%d,%s", key, len(data), data)
+		return true, nil
+	} else {
+		path := filepath.Join(repository.targetDir, key)
+		if _, err := os.Stat(path); os.IsExist(err) {
+			return false, nil
+		}
+		err := ioutil.WriteFile(path, data, 0644)
+		if err != nil {
+			return false, fmt.Errorf("fileRepository.Put failed: %v", err)
+		}
+		return true, nil
 	}
-	err := ioutil.WriteFile(path, data, 0644)
-	if err != nil {
-		return false, fmt.Errorf("fileRepository.Put failed: %v", err)
-	}
-	return true, nil
 }
 
 // A HTTP repository - POST the fetched document to a generic endpoint that accepts JSON data.

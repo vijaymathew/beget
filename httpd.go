@@ -38,13 +38,8 @@ type HTTPServerConfig struct {
 	TLSKeyFile string
 }
 
-var repoRegistry = map[string]NewRepo{"file": NewFileRepository,
-	"simpleHTTP": NewSimpleHTTPRepository}
-
 func toCrawlRequestContext(req *CrawlRequest) (*CrawlRequestContext) {
-	repo := repoRegistry[req.RepoType](req.RepoConfig)
-	ctx := CrawlRequestContext{Repo: repo, Context: &req.Context}
-	return &ctx
+	return NewCrawlRequestContext(req.RepoType, req.RepoConfig, &req.Context)
 }
 
 func startJobPopper(jobs chan CrawlRequest, abort chan struct{}, crawlCtx *CrawlContext) {
@@ -74,7 +69,7 @@ func StartHTTPServer(config HTTPServerConfig, crawlCtx *CrawlContext) (err error
 			fmt.Fprintf(w, "%v", err)
 			return
 		}
-		_, ok := repoRegistry[req.RepoType]
+		ok := IsValidRepo(req.RepoType)
 		if !ok {
 			w.WriteHeader(400)
 			fmt.Fprintf(w, "bad repository type: %s", req.RepoType)

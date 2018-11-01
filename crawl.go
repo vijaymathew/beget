@@ -29,9 +29,23 @@ type CrawlRequestContext struct {
 	Context *HTTPRequestContext
 }
 
+var repoRegistry = map[string]NewRepo{"file": NewFileRepository,
+	"simpleHTTP": NewSimpleHTTPRepository}
+
+func NewCrawlRequestContext(repoName string, repoConfig string, httprctx *HTTPRequestContext) (*CrawlRequestContext) {
+	repo := repoRegistry[repoName](repoConfig)
+	ctx := CrawlRequestContext{Repo: repo, Context: httprctx}
+	return &ctx
+}
+
 func NewCrawlContext(maxTokens int, logger *log.Logger) (*CrawlContext) {
 	crawlCtx := CrawlContext{tokens: make(chan struct{}, maxTokens), Logger: logger}
 	return &crawlCtx
+}
+
+func IsValidRepo(repoName string) bool {
+	_, ok := repoRegistry[repoName]
+	return ok
 }
 
 func (crawlCtx *CrawlContext) AcquireToken() {
@@ -46,6 +60,10 @@ func (crawlCtx *CrawlContext) GetResource(resources map[string]string, ctx *Craw
 	for key, res := range resources {
 		go getResource(key, res, ctx, crawlCtx)
 	}
+}
+
+func (crawlCtx *CrawlContext) GetOneResource(resourceKey string, resource string, ctx *CrawlRequestContext) {
+	go getResource(resourceKey, resource, ctx, crawlCtx)
 }
 
 func getResource(resourceKey string, resource string, ctx *CrawlRequestContext, crawlCtx *CrawlContext) {
