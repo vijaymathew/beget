@@ -1,8 +1,10 @@
 import http.client
 import json
 import sys
+import ssl
 import getopt
 import fileinput
+import traceback
 
 def print_usage():
     print('conroller.py <options>\n')
@@ -45,10 +47,16 @@ def urlfile(url):
     return url[url.rfind("/")+1:]
 
 def getconnection():
-    if crawler_url.startswith('https'):
-        return http.client.HTTPSConnection(crawler_host)
-    else:
-        return http.client.HTTPConnection(crawler_host)
+    try:
+        if crawler_url.startswith('https'):
+            ctx = ssl._create_unverified_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            return http.client.HTTPSConnection(crawler_host, context = ctx)
+        else:
+            return http.client.HTTPConnection(crawler_host)
+    except:
+        traceback.print_exc(file=sys.stdout)
 
 headers = {'Content-type': 'application/json'}
 
@@ -72,6 +80,7 @@ def crawl(urls):
         response = connection.getresponse()
     except Exception as ex:
         print(ex)
+        traceback.print_exc(file=sys.stdout)
     finally:
         if connection:
             connection.close()
