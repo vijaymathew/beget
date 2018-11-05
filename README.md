@@ -89,4 +89,4 @@ The attribute `resources` is a map of keys to resources to crawl.
 ```
 
 A sample HTTP requestor written in python (controller.py) and an HTTP repository (httprepo.py)
-is available in the sample folder.
+is available in the sample folder. (See sample/README.md for details).
