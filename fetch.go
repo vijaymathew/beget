@@ -25,11 +25,11 @@ import (
 const defaultRedirects = 10
 
 type HTTPRequestContext struct {
-	ProxyURL string
-	MaxRedirects int // defaults to 10
-	Jar http.CookieJar
-	TimeoutSecs time.Duration // defaults to 5secs
-	Header map[string]string
+	ProxyURL string `json:"proxyURL"`
+	MaxRedirects int `json:"maxRedirects"` // defaults to 10
+	Jar http.CookieJar `json:"jar"`
+	TimeoutSecs time.Duration `json:"timeoutSecs"` // defaults to 5secs
+	Header map[string]string `json:"header"`
 }
 
 type HTTPResponse struct {
