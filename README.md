@@ -2,8 +2,11 @@ Beget
 =====
 
 Beget is a tool for building distributed web crawler infrastructures.
-Beget is written in the Go programming language and you will need the Go compiler version 1.9 or later
-to build the source code.
+
+You may download a pre-built binary for your platform from https://github.com/vijaymathew/beget/releases/tag/v1.0.
+
+You can also compile a binary from the sources.
+Beget is written in the Go programming language and the Go compiler version 1.9 or later is required to build it.
 
 Issue the `go build` command from this directory to compile the code:
 
